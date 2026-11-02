@@ -54,7 +54,9 @@ namespace mali64 {
 
         // NOTA: O N64ModernRuntime expõe a origem do VI através do barramento.
         // Assumindo que essa função está disponível no header do runtime:
-        uint32_t vi_origin = ultramodern::renderer::get_vi_origin();
+    uint32_t vi_origin = 0;
+    auto vi_regs = ultramodern::renderer::get_vi_regs();
+    if (vi_regs) vi_origin = vi_regs->VI_ORIGIN_REG;
 
         int w = 0, h = 0;
         // No Linux, window_handle é um SDL_Window*
