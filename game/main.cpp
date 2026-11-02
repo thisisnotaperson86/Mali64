@@ -1,14 +1,11 @@
 #include <SDL2/SDL.h>
+#include <GLES3/gl3.h>
 #include <cstdio>
 #include <memory>
 
 #include "ultramodern/ultramodern.hpp"
 #include "ultramodern/renderer_context.hpp"
 #include "mali64/renderer_context.h"
-
-// Se você tem o código recompilado do jogo, ele geralmente expõe funções
-// de inicialização no header principal (ex: "recomp.h").
-// #include "recomp.h"
 
 int main(int argc, char** argv) {
     // 1. Inicializa o SDL2
@@ -17,7 +14,7 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // 2. Configura os atributos do OpenGL ES 3.0 antes de criar a janela
+    // 2. Configura os atributos do OpenGL ES 3.0
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -47,35 +44,26 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    // Ativa o V-Sync (1 = ligado, 0 = desligado)
-    SDL_GL_SetSwapInterval(1);
+    SDL_GL_SetSwapInterval(1); // V-Sync ligado
 
     std::printf("OpenGL Info:\n");
-    std::printf("  Vendor: %s\n", glGetString(GL_VENDOR));
-    std::printf("  Renderer: %s\n", glGetString(GL_RENDERER));
-    std::printf("  Version: %s\n", glGetString(GL_VERSION));
+    std::printf("  Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
+    std::printf("  Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
+    std::printf("  Version: %s\n", (const char*)glGetString(GL_VERSION));
 
     // 4. Registra o Mali64 no N64ModernRuntime
-    // Isso substitui completamente o RT64!
     ultramodern::renderer::callbacks_t renderer_callbacks;
-    renderer_callbacks.create_render_context = [](uint8_t* rdram, ultramodern::renderer::WindowHandle window_handle, bool developer_mode) {
+    
+    // NOTA: Especificamos o tipo de retorno explicitamente para o C++ saber que é um RendererContext
+    renderer_callbacks.create_render_context = [](uint8_t* rdram, ultramodern::renderer::WindowHandle window_handle, bool developer_mode) -> std::unique_ptr<ultramodern::renderer::RendererContext> {
         return std::make_unique<mali64::RendererContext>(rdram, window_handle, developer_mode);
     };
+    
     ultramodern::renderer::set_callbacks(renderer_callbacks);
-
-    // 5. Inicializa o Runtime e o Jogo Recompilado
-    // ATENÇÃO: O código abaixo é um exemplo genérico. Você precisará adaptar
-    // para a função de inicialização que o N64Recomp gerou para o seu jogo.
-    /*
-     *   uint8_t* rdram = new uint8_t[8 * 1024 * 1024]; // 8MB de RAM do N64
-     *   ultramodern::recomp::start(rdram, 0x80100400, "mods/"); // Endereço de entrypoint genérico
-     */
 
     std::printf("Mali64: Runtime inicializado com sucesso.\n");
 
-    // 6. Loop principal (Simulação se o runtime não assumir o controle)
-    // Em um jogo real, o N64ModernRuntime tem seu próprio loop de threads.
-    // Este loop abaixo só é necessário se você for controlar a janela manualmente.
+    // 5. Loop principal
     bool running = true;
     while (running) {
         SDL_Event event;
@@ -84,13 +72,10 @@ int main(int argc, char** argv) {
                 running = false;
             }
         }
-
-        // O N64ModernRuntime (através do RendererContext::update_screen)
-        // cuidará do SDL_GL_SwapWindow internamente.
-        SDL_Delay(16); // Apenas para não fritar a CPU no loop de simulação
+        SDL_Delay(16);
     }
 
-    // 7. Limpeza
+    // 6. Limpeza
     SDL_GL_DeleteContext(gl_context);
     SDL_DestroyWindow(window);
     SDL_Quit();
