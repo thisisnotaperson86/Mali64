@@ -6,8 +6,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # --- Dependências do Sistema ---
+find_package(PkgConfig REQUIRED)
+
+# Encontra o SDL2 (padrão do CMake)
 find_package(SDL2 REQUIRED)
-find_package(OpenGLES3 REQUIRED)
+
+# Encontra o OpenGL ES usando o PkgConfig
+pkg_check_modules(GLESv2 REQUIRED glesv2)
 
 # --- Submódulos Automáticos (FetchContent) ---
 include(FetchContent)
@@ -32,14 +37,16 @@ FetchContent_MakeAvailable(N64ModernRuntime)
 file(GLOB MALI64_SOURCES "src/*.cpp")
 add_library(Mali64 STATIC ${MALI64_SOURCES})
 
-target_include_directories(Mali64 PUBLIC
+target_include_directories(Mali64 PUBLIC 
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${GLESv2_INCLUDE_DIRS}
 )
 
-target_link_libraries(Mali64 PUBLIC
-    SDL2::SDL2
-    OpenGL::GLES3
+# Linka as dependências necessárias
+target_link_libraries(Mali64 PUBLIC 
+    SDL2::SDL2 
+    ${GLESv2_LIBRARIES}
     ultramodern
     librecomp
 )
@@ -48,14 +55,15 @@ target_link_libraries(Mali64 PUBLIC
 file(GLOB GAME_SOURCES "game/*.cpp")
 add_executable(Mali64_Game ${GAME_SOURCES})
 
-target_link_libraries(Mali64_Game PRIVATE
+target_link_libraries(Mali64_Game PRIVATE 
     Mali64
-    SDL2::SDL2
-    OpenGL::GLES3
+    SDL2::SDL2 
+    ${GLESv2_LIBRARIES}
     ultramodern
     librecomp
 )
 
+# Otimizações para a CPU do Anbernic
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm|aarch64")
     target_compile_options(Mali64 PRIVATE -O3 -mcpu=cortex-a53 -mfpu=neon-fp-armv8)
 endif()
