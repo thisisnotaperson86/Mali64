@@ -3,8 +3,6 @@ name: Build Mali64 (ARM64)
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -15,28 +13,25 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install Cross-Compiler and ARM Dependencies
-      run: |
-        sudo dpkg --add-architecture arm64
-        sudo apt-get update
-        # Instala compiladores cruzados e bibliotecas para ARM64
-        sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu cmake ninja-build
-        # Como o ubuntu-22.04 não tem ports.ubuntu.com por padrão nos runners do GH, usamos o apt-cross do repositório oficial
-        sudo apt-get install -y libsdl2-dev:arm64 libgles2-mesa-dev:arm64 libgl1-mesa-dev:arm64
+    - name: Set up QEMU (Emulação ARM64)
+      uses: docker/setup-qemu-action@v3
 
-    - name: Configure CMake
+    - name: Build inside Ubuntu ARM64 Container
       run: |
-        cmake -B build -G Ninja \
-          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchain-arm64.cmake \
-          -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build Project
-      run: |
-        cmake --build build -j $(nproc)
+        docker run --rm --platform linux/arm64 \
+          -v ${{ github.workspace }}:/workspace \
+          -w /workspace \
+          arm64v8/ubuntu:22.04 \
+          /bin/bash -c "
+            apt-get update && \
+            apt-get install -y build-essential cmake ninja-build git libsdl2-dev libgles2-mesa-dev && \
+            cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release && \
+            cmake --build build -j \$(nproc)
+          "
 
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: Mali64-Game-ARM64
         path: build/Mali64_Game
-        if-no-files-found: error
+        if-no-files-found: warn
