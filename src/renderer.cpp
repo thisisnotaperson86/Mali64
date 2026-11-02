@@ -1,5 +1,36 @@
 #include "mali64/renderer.h"
-#include "gles_api.h"
+#include <GLES3/gl3.h>
+
+// Função embutida para compilar shaders (substitui o gles_api.h)
+static GLuint gles_build_program(const char* vs_source, const char* fs_source, const char** attribs, int attrib_count) {
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vs_source, nullptr);
+    glCompileShader(vs);
+    
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fs_source, nullptr);
+    glCompileShader(fs);
+    
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    for (int i = 0; i < attrib_count; i++) {
+        glBindAttribLocation(program, i, attribs[i]);
+    }
+    glLinkProgram(program);
+    
+    GLint success;
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+    if (!success) {
+        char infoLog[512];
+        glGetProgramInfoLog(program, 512, nullptr, infoLog);
+        fprintf(stderr, "Mali64: Shader link error: %s\n", infoLog);
+    }
+    
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+    return program;
+}
 
 #include <algorithm>
 #include <array>
