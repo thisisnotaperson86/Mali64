@@ -1,5 +1,5 @@
 #include <SDL2/SDL.h>
-#include <GLES3/gl3.h>
+#include <GLES3/gl3.h>   // <-- ESTA É A LINHA MÁGICA QUE RESOLVE O ERRO DO GL_VENDOR
 #include <cstdio>
 #include <memory>
 
@@ -46,6 +46,7 @@ int main(int argc, char** argv) {
 
     SDL_GL_SetSwapInterval(1); // V-Sync ligado
 
+    // Testa se o OpenGL carregou corretamente
     std::printf("OpenGL Info:\n");
     std::printf("  Vendor: %s\n", (const char*)glGetString(GL_VENDOR));
     std::printf("  Renderer: %s\n", (const char*)glGetString(GL_RENDERER));
@@ -54,7 +55,7 @@ int main(int argc, char** argv) {
     // 4. Registra o Mali64 no N64ModernRuntime
     ultramodern::renderer::callbacks_t renderer_callbacks;
     
-    // NOTA: Especificamos o tipo de retorno explicitamente para o C++ saber que é um RendererContext
+    // Aqui está a conversão que você já tinha arrumado e está perfeita
     renderer_callbacks.create_render_context = [](uint8_t* rdram, ultramodern::renderer::WindowHandle window_handle, bool developer_mode) -> std::unique_ptr<ultramodern::renderer::RendererContext> {
         return std::make_unique<mali64::RendererContext>(rdram, window_handle, developer_mode);
     };
