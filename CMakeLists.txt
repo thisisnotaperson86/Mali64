@@ -13,7 +13,6 @@ pkg_check_modules(GLESv2 REQUIRED glesv2)
 # --- Submódulos Automáticos (FetchContent) ---
 include(FetchContent)
 
-# Baixa APENAS o N64ModernRuntime (Ele já traz o N64Recomp internamente)
 FetchContent_Declare(
     N64ModernRuntime
     GIT_REPOSITORY https://github.com/N64Recomp/N64ModernRuntime.git
@@ -31,8 +30,6 @@ target_include_directories(Mali64 PUBLIC
     ${GLESv2_INCLUDE_DIRS}
 )
 
-# Linka as dependências necessárias
-# As bibliotecas 'ultramodern' e 'librecomp' agora vêm do N64ModernRuntime
 target_link_libraries(Mali64 PUBLIC 
     SDL2::SDL2 
     ${GLESv2_LIBRARIES}
@@ -52,7 +49,7 @@ target_link_libraries(Mali64_Game PRIVATE
     librecomp
 )
 
-# Otimizações para a CPU do Anbernic
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm|aarch64")
-    target_compile_options(Mali64 PRIVATE -O3 -mcpu=cortex-a53 -mfpu=neon-fp-armv8)
+# Otimizações para a CPU do Anbernic (64-bit)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    target_compile_options(Mali64 PRIVATE -O3 -mcpu=cortex-a53)
 endif()
