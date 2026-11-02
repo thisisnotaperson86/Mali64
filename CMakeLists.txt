@@ -7,25 +7,13 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 # --- Dependências do Sistema ---
 find_package(PkgConfig REQUIRED)
-
-# Encontra o SDL2 (padrão do CMake)
 find_package(SDL2 REQUIRED)
-
-# Encontra o OpenGL ES usando o PkgConfig
 pkg_check_modules(GLESv2 REQUIRED glesv2)
 
 # --- Submódulos Automáticos (FetchContent) ---
 include(FetchContent)
 
-# Baixa o N64Recomp
-FetchContent_Declare(
-    N64Recomp
-    GIT_REPOSITORY https://github.com/N64Recomp/N64Recomp.git
-    GIT_TAG main
-)
-FetchContent_MakeAvailable(N64Recomp)
-
-# Baixa o N64ModernRuntime
+# Baixa APENAS o N64ModernRuntime (Ele já traz o N64Recomp internamente)
 FetchContent_Declare(
     N64ModernRuntime
     GIT_REPOSITORY https://github.com/N64Recomp/N64ModernRuntime.git
@@ -44,6 +32,7 @@ target_include_directories(Mali64 PUBLIC
 )
 
 # Linka as dependências necessárias
+# As bibliotecas 'ultramodern' e 'librecomp' agora vêm do N64ModernRuntime
 target_link_libraries(Mali64 PUBLIC 
     SDL2::SDL2 
     ${GLESv2_LIBRARIES}
